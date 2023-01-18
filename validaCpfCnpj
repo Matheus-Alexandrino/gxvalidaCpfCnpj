@@ -1,0 +1,136 @@
+//Source*
+if &ClienteTipoDocumento = 'F'
+	&CPF = &ClienteCpfCnpj.Trim()
+	&MultDig1 = 10
+	&MultDig2 = 11
+	&QtChar = Len(&CPF.Substring(1,9))				
+	For &i = 1 To &QtChar	//Quantidade de repetições, definido de 1 a 9
+	    &base = val(&CPF.Substring(&i, 1)) //tentativa de pegar uma posição
+		&calc = &base * &MultDig1 // Número coletado da coleção de 9 numeros		
+		&MultDig1= &MultDig1 - 1 // Valor a ser multiplicado decrementa a cada vez que o sistema passa pelo loop
+		&ResultadoD1 = &calc + &ResultadoD1
+		&PrimeiroDigito = Mod(&ResultadoD1 *10, 11)
+    EndFor		
+	For &i = 1 To 10	//Quantidade de repetições, definido de 1 a 10
+		&base = val(&CPF.Substring(&i, 1)) //tentativa de pegar uma posição
+		&calc = &base * &MultDig2 // Número coletado da coleção de 10 numeros		
+		&MultDig2 = &MultDig2 - 1 // Valor a ser multiplicado decrementa a cada vez que o sistema passa pelo loop
+		&ResultadoD2 = &calc + &ResultadoD2
+		&SegundoDigito = Mod(&ResultadoD2 *10, 11)
+	EndFor
+
+	if val(&ClienteCpfCnpj.Substring(10, 1 )) <> &PrimeiroDigito or val(&ClienteCpfCnpj.Substring(11, 1)) <> &SegundoDigito
+		msg('CPF Inválido!')
+		&Retorno = 1
+		Else
+		msg('CPF Válido!')
+	Endif
+
+else
+	&CNPJ = &ClienteCpfCnpj.Trim()
+	&CNPJMult1 = 5
+	&CNPJMult2 = 6	
+	
+	For &i = 1 To 12					
+		&basePJ = val(&CNPJ.Substring(&i, 1))
+		if &CNPJMult1 =1
+			&CNPJMult1 = &CNPJMult1+8
+		endif
+		&calcPJ = &basePJ * &CNPJMult1 
+		&CNPJMult1= &CNPJMult1 - 1 
+		&ResultadoPJ1 = &ResultadoPJ1	+	&calcPJ 
+//				&ResultadoPJ1 = 102
+		&PrimeiroDigitoPJ = Mod(&ResultadoPJ1, 11)		
+	EndFor //102
+	
+	For &i = 1 To 13					
+		&basePJ = val(&CNPJ.Substring(&i, 1)) 
+		if &CNPJMult2 = 1
+			&CNPJMult2 =&CNPJMult2 + 8
+		endif
+		&calcPJ = &basePJ * &CNPJMult2
+		&CNPJMult2 = &CNPJMult2 - 1 				
+		&ResultadoPJ2 = &ResultadoPJ2		+	&calcPJ 
+//				&ResultadoPJ2= 120
+		&SegundoDigitoPJ = Mod(&ResultadoPJ2 , 11)	
+	EndFor //120
+//		
+	if &PrimeiroDigitoPJ < 2
+		&PrimeiroDigitoPJ = 0
+	Else 
+		&PrimeiroDigitoPJ = 11 - &PrimeiroDigitoPJ
+	Endif
+
+	if &SegundoDigitoPJ < 2
+		&SegundoDigitoPJ = 0
+	Else 
+		&SegundoDigitoPJ = 11 - &SegundoDigitoPJ
+	Endif			
+
+	if val(&ClienteCpfCnpj.Substring(13, 1 )) <> &PrimeiroDigitoPJ or val(&ClienteCpfCnpj.Substring(14, 1)) <> &SegundoDigitoPJ
+			msg('CNPJ Inválido!')
+		&Retorno = 1
+	Else
+		msg('CNPJ Válido!')
+	Endif
+endif
+
+	
+//VALIDAÇÃO PRIMEIRO DÍGITO CPF
+//Primeiramente multiplica-se os 9 primeiros dígitos pela sequência decrescente de números 
+//de 10 à 2 e soma os resultados. Assim:  529982247
+//5 * 10 + 2 * 9 + 9 * 8 + 9 * 7 + 8 * 6 + 2 * 5 + 2 * 4 + 4 * 3 + 7 * 2
+//O resultado do nosso exemplo é: 295
+//Multiplicar esse resultado por 10 e dividir por 11. 295 * 10 / 11
+//Se ele for igual ao primeiro dígito verificador (primeiro dígito depois do '-'), a primeira 
+//parte da validação está correta.
+//O resultado da divisão acima é '268' e o RESTO é 2
+//Observação Importante: Se o resto da divisão for igual a 10, nós o consideramos como 0.
+	
+//VALIDAÇÃO SEGUNDO DÍGITO CPF
+//A validação do segundo dígito é semelhante à primeira, porém vamos considerar os 9 primeiros dígitos, 
+//mais o primeiro dígito verificador, e vamos multiplicar esses 10 números pela sequencia decrescente de 
+//11 a 2. Vejamos:
+//5 * 11 + 2 * 10 + 9 * 9 + 9 * 8 + 8 * 7 + 2 * 6 + 2 * 5 + 4 * 4 + 7 * 3 + 2 * 2
+//O resultado é: 347
+//Seguindo o mesmo processo da primeira verificação, multiplicamos por 10 e dividimos por 11.
+//347 * 10 / 11
+
+//============================================================================================================//
+
+//VALIDAÇÃO PRIMEIRO DÍGITO CNPJ 
+//
+//Vamos mostrar o modo de cálculo de modo prático, para isso vamos adotar um número de CNPJ 
+//hipotético e calcularemos seus dígitos verificadores: 11.222.333/0001-XX.
+//Vamos começar alinhando os números que compõe o CNPJ com os algarismos 5,4,3,2,9,8,7,6,5,4,3,2 nesta ordem, veja:
+//1	1	2	2	2	3	3	3	0	0	0	1
+//5	4	3	2	9	8	7	6	5	4	3	2
+//5	4	6	4	18	24	21	18	0	0	0	2
+//1 2   3   4   5   6   7   8   9  10  11  11
+//Com os valores encontrados em cada uma das colunas efetuaremos o somatório, desta forma: 
+//5+4+6+4+18+24+21+18+0+0+0+2
+//e com o número obtido, nesse caso *102*, realizaremos a divisão por 11 (102/11).
+//Vamos considerar como quociente somente o valor inteiro, o resto da divisão será responsável pelo
+//cálculo do primeiro dígito verificador. Assim sendo, no nosso caso o resto da divisão é o número 3.
+
+//Neste momento temos a seguinte regra: Caso o resto da divisão seja menor que 2 o valor do dígito 
+//verificador passa a ser 0, caso contrário subtraímos o valor de 11 para obter o dígito, que é o 
+//nosso caso, portanto nosso primeiro dígito verificador é (11 - 3) o número 8.
+
+//VALIDAÇÃO SEGUNDO DÍGITO CNPJ 
+// O processo é semelhante a primeira etapa, a única mudança é a seqüência de números que serão alinhados 
+//na tabela, como a tabela ficou maior com a presença do dígito já calculado a seqüência agora tem que 
+//ter mais um número e ficará assim: 6,5,4,3,2,9,8,7,6,5,4,3 e 2, confira:
+//1	1	2	2	2	3	3	3	0	0	0	1	8
+//6	5	4	3	2	9	8	7	6	5	4	3	2
+//6	5	8	6	4	27	24	21	0	0	0	3	16
+//1 2   3   4   5   6   7   8   9  10  11  11  12
+//Como você pode notar efetuamos também, como na primeira etapa, a multiplicação das colunas e faremos 
+//agora o somatório das resultados obtidos: 6+5+8+6+4+27+24+21+0+0+0+3+16. Com o resultado obtido, nesse
+//caso *120*, efetuamos a divisão por 11.
+//Nessa divisão, assim como no cálculo anterior, vamos apenas considerar o valor inteiro do quociente, 
+//pois o cálculo do último dígito verificador será feito com o resto da divisão seguindo a seguinte regra: 
+//caso o resto da divisão seja menor que 2 (dois), esse valor passa automaticamente a ser zero; caso contrário, 
+//que é o nosso caso, subtrai-se o resto de 11 para obter o valor do último dígito verificador, acompanhe: 
+//120/11=10 com resto 10, 11-10 dígito verificador 1 - 
+//Nosso CNPJ agora completo 11.222.333/0001-81
